@@ -3,6 +3,7 @@ class Intent < Formula
   homepage "https://github.com/matthewsinclair/intent"
   version "3.0.0"
   license "MIT"
+  revision 1
 
   RELEASE_VERSION = "3.0.0".freeze
 
@@ -56,6 +57,23 @@ class Intent < Formula
     resource("support").stage do
       libexec.install Dir["*"]
     end
+
+    # THE EXECUTABLE BIT, AND IT IS NOT BELT-AND-BRACES -- WITHOUT IT THE KEG
+    # INSTALLS AND NOTHING IN IT RUNS. GitHub serves release assets as plain
+    # files with no exec bit, and Homebrew's `.install` PRESERVES the source
+    # mode rather than setting one. So 644 goes in, 644 comes out, `brew
+    # install` prints its beer emoji, and every `intent` call returns
+    # `permission denied`. Measured on the v3.0.0 tap, 2026-08-26, on the first
+    # real install from the network.
+    #
+    # A CACHE-PRESEEDED INSTALL CANNOT CATCH THIS, which is why it survived
+    # every proof taken before that one: a preseed fills the cache from LOCAL
+    # files that are already +x, so the mode survives and the install works.
+    # Only the network hop loses it. "Proves everything but the network hop"
+    # was an honest scoping, and this is what was behind it.
+    chmod 0755, libexec/"bin/intent"
+    chmod 0755, libexec/"bin/intentd"
+
     bin.install_symlink libexec/"bin/intent"
     bin.install_symlink libexec/"bin/intentd"
   end
