@@ -7,22 +7,34 @@ brew tap matthewsinclair/intent
 brew install intent
 ```
 
-## Status: no formula yet
+Upgrade and removal are the ordinary verbs:
 
-**This tap is empty on purpose.** Intent v3 is the first release to ship a compiled binary, and it has not been cut yet. A formula pointing at a release that does not exist would let `brew tap` succeed and `brew install` fail with a download error -- which reads as "the tap is broken" rather than "the release is not out yet". An empty tap says the true thing.
+```sh
+brew upgrade intent
+brew uninstall intent
+```
 
-The formula lands here with the first v3 release. Until then, install Intent [from source](https://github.com/matthewsinclair/intent).
+**This README does not name a version anywhere, on purpose.** `brew info intent` reports what the tap offers and what you have installed, and it reads them from the formula rather than from prose. The previous version of this file was accurate for eleven days and then wrong within the hour, because it described the tap's contents in prose and the contents changed. `brew info` cannot go stale that way.
 
 ## What lands here
 
-Two binaries, from one formula:
+Three release assets, one formula:
 
-| Binary    | What it is                                                                       |
-| --------- | -------------------------------------------------------------------------------- |
-| `intent`  | The CLI. Steel threads, work packages, acceptance criteria, project scaffolding. |
-| `intentd` | The daemon. One per machine; the CLI talks to it over GraphQL.                   |
+| Asset                          | What it is                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `intent-aarch64-apple-darwin`  | The CLI. Steel threads, work packages, acceptance criteria, project scaffolding.            |
+| `intentd-aarch64-apple-darwin` | The daemon binary. Installed, and not yet implemented -- see below.                         |
+| `intent-support.tar.gz`        | The hooks, guards and templates the CLI execs. No Mach-O in it, so nothing in it is signed. |
 
-`intentd` installs as a formula resource alongside the CLI, so `brew install intent` gets you both.
+`brew install intent` gets you all three: the daemon and the support tree install as formula resources alongside the CLI.
+
+### intentd is installed and does nothing yet
+
+`intentd` currently answers every invocation, `--version` and `--help` included, with a single line ending `-- not yet implemented`. It is shipped now so that the install layout does not change when the daemon lands; there is no start verb, no log path, and consequently no `brew services` block in the formula. **The CLI does not require it and does not contact it.** Everything `intent` does today, it does in-process.
+
+### Where it lands
+
+Both binaries install into `libexec/bin` inside the keg, with symlinks from `bin`, and the support tree unpacks beside them in `libexec`. That is not the conventional `bin.install`, and the formula carries the full reasoning at the `def install` block -- briefly: `intent` finds its own hooks by walking up from its resolved location to the directory holding `lib/templates`, so the tree has to sit inside the keg beside the binary, and `libexec` is the one place Homebrew does not symlink into the shared prefix.
 
 ## Platform support
 
@@ -36,9 +48,11 @@ If you are wondering why `stapler validate` reports no ticket: a bare Mach-O exe
 
 ## The formula is generated -- please do not hand-edit it
 
-When a formula does appear in `Formula/`, it is emitted by `int macos formula` in the Intent repository, from artefacts that have already been proven signed and notarised. Its version and every `sha256` are read from the built binaries themselves, never typed.
+`Formula/intent.rb` is emitted by `int macos formula` in the Intent repository, from artefacts that have already been proven signed and notarised. Its version and every `sha256` are read from the built binaries themselves, never typed.
 
 That matters because of an asymmetry that is easy to get backwards: **signing rewrites the binary in place, while notarisation leaves it byte-identical.** A checksum taken one step too early does not fail for the person cutting the release -- it fails for everyone running `brew install`, against a formula already published, and Homebrew reports it as a corrupt download. Generating the formula removes the hand-copied number that failure depends on.
+
+The same argument covers the `chmod` in the install block, and that one is not hypothetical. GitHub serves release assets with no executable bit and Homebrew's `.install` preserves the source mode, so the first published formula installed two binaries at mode 644: `brew install` succeeded, printed its beer emoji, and every `intent` call returned `permission denied`. **The fix went into the generator rather than into this file**, because a fix applied here is regenerated away at the next cut, and a green install would then be evidence of nothing.
 
 So a hand-edit here will be silently overwritten at the next release, and worse, a hand-corrected hash would paper over a real problem upstream. If a checksum looks wrong, that is a bug worth [reporting](https://github.com/matthewsinclair/intent/issues).
 
