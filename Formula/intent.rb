@@ -1,31 +1,39 @@
 class Intent < Formula
-  desc "Steel thread process for helping LLMs help you work with your code"
-  homepage "https://github.com/matthewsinclair/intent"
-  version "3.0.1"
-  license "MIT"
-
   RELEASE_VERSION = "3.0.1".freeze
 
-  # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission. Both
-  # binaries are Developer ID signed and notarised; nothing is stapled, because a
-  # bare Mach-O has nowhere to hold a ticket and Gatekeeper checks online.
-  on_macos do
-    on_arm do
-      url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-      sha256 "f1e6f38e24825acc48184ad19691526b5b53198df5e5ece702dec828cd83f3c1"
+  desc "Steel thread process for helping LLMs help you work with your code"
+  homepage "https://github.com/matthewsinclair/intent"
+  # THE URL IS AT TOP LEVEL, NOT INSIDE `on_macos do on_arm do`. Until 3.0.1 it
+  # was nested there, and `brew tap` validates a tap's formulae under EVERY
+  # simulated OS and arch: on Linux and on Intel the nested form has no url, so
+  # the tap refused with "formula requires at least a URL" and "invalid syntax
+  # in tap", for everyone. There is no `version` line because brew reads it
+  # from the /v<version>/ path, and `brew audit --strict` refuses the
+  # redundant one.
+  url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
+  sha256 "f1e6f38e24825acc48184ad19691526b5b53198df5e5ece702dec828cd83f3c1"
+  license "MIT"
 
-      resource "intentd" do
-        url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-        sha256 "ab125a565c3c94197b849654cf885f9faff4e89844ab9bce015a7fa3082878b3"
-      end
+  # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
+  # TRUE BY CONSTRUCTION through the two dependency lines below, which is what
+  # a platform limit in a formula is for. Both binaries are Developer ID signed
+  # and notarised; nothing is stapled, because a bare Mach-O has nowhere to hold
+  # a ticket and Gatekeeper checks online. (No comment line here may open with
+  # the dependency keyword: `brew audit` reads that as a commented-out
+  # dependency and refuses it.)
+  depends_on arch: :arm64
+  depends_on :macos
 
-      # The hooks and guards the binaries exec. Not signed and not notarised --
-      # there is no Mach-O in it. See SUPPORT_ASSET in bin/.devbin/cmd/macos.
-      resource "support" do
-        url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-        sha256 "2ca6bb1c3507eb59c50c8b7d117f80b31f4548392870cec9641f9b5307e231d3"
-      end
-    end
+  resource "intentd" do
+    url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
+    sha256 "ab125a565c3c94197b849654cf885f9faff4e89844ab9bce015a7fa3082878b3"
+  end
+
+  # The hooks and guards the binaries exec. Not signed and not notarised --
+  # there is no Mach-O in it. See SUPPORT_ASSET in bin/.devbin/cmd/macos.
+  resource "support" do
+    url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
+    sha256 "2ca6bb1c3507eb59c50c8b7d117f80b31f4548392870cec9641f9b5307e231d3"
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
