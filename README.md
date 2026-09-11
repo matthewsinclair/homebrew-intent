@@ -14,23 +14,31 @@ brew upgrade intent
 brew uninstall intent
 ```
 
-**This README does not name a version anywhere, on purpose.** `brew info intent` reports what the tap offers and what you have installed, and it reads them from the formula rather than from prose. The previous version of this file was accurate for eleven days and then wrong within the hour, because it described the tap's contents in prose and the contents changed. `brew info` cannot go stale that way.
+**This README does not name a version, on purpose.** `brew info intent` reports what the tap offers and what you have installed, and it reads them from the formula rather than from prose, so it cannot go stale the way prose does.
 
 ## What lands here
 
-Three release assets, one formula:
+The formula installs these release assets:
 
-| Asset                          | What it is                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------------------- |
-| `intent-aarch64-apple-darwin`  | The CLI. Steel threads, work packages, acceptance criteria, project scaffolding.            |
-| `intentd-aarch64-apple-darwin` | The daemon binary. Installed, and not yet implemented -- see below.                         |
-| `intent-support.tar.gz`        | The hooks, guards and templates the CLI execs. No Mach-O in it, so nothing in it is signed. |
+| Asset                          | What it is                                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `intent-aarch64-apple-darwin`  | The CLI. Steel threads, work packages, acceptance criteria, project scaffolding.                                            |
+| `intentd-aarch64-apple-darwin` | The daemon, one per machine, serving every project on it. Optional: see below.                                              |
+| `intent-support.tar.gz`        | The templates, hooks, guards, rule library and skills the CLI reads and execs. No Mach-O in it, so nothing in it is signed. |
 
-`brew install intent` gets you all three: the daemon and the support tree install as formula resources alongside the CLI.
+`brew install intent` gets you all of them: the daemon and the support tree install as formula resources alongside the CLI.
 
-### intentd is installed and does nothing yet
+The release also carries `Intent.app.zip`, the Intent menubar app. **The formula does not install it**: download it from the [GitHub release](https://github.com/matthewsinclair/intent/releases), unzip it, and move `Intent.app` to `/Applications`.
 
-`intentd` currently answers every invocation, `--version` and `--help` included, with a single line ending `-- not yet implemented`. It is shipped now so that the install layout does not change when the daemon lands; there is no start verb, no log path, and consequently no `brew services` block in the formula. **The CLI does not require it and does not contact it.** Everything `intent` does today, it does in-process.
+### intentd is optional
+
+**The CLI does not require the daemon.** Every `intent` command does its work in-process unless you pass `--daemon`. To run `intentd`, use `intent daemon start` (and `status`, `stop`, `restart`), or let launchd keep it running:
+
+```sh
+brew services start intent
+```
+
+The formula's service block runs `intentd` directly and sends its stdout and stderr to `intentd.log` under Homebrew's `var/log`.
 
 ### Where it lands
 
