@@ -1,11 +1,10 @@
 class Intent < Formula
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
-  version "3.0.0"
+  version "3.0.1"
   license "MIT"
-  revision 1
 
-  RELEASE_VERSION = "3.0.0".freeze
+  RELEASE_VERSION = "3.0.1".freeze
 
   # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission. Both
   # binaries are Developer ID signed and notarised; nothing is stapled, because a
@@ -13,18 +12,18 @@ class Intent < Formula
   on_macos do
     on_arm do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-      sha256 "04e7dda893b61529f3bc065bd23f009174a39f589acdbe8e0a8d55567145cf0b"
+      sha256 "f1e6f38e24825acc48184ad19691526b5b53198df5e5ece702dec828cd83f3c1"
 
       resource "intentd" do
         url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-        sha256 "7bf59bb52e2c4c15c3ae129daa0be17e60a0f6770e622072e6c2fea3d2dfda5c"
+        sha256 "ab125a565c3c94197b849654cf885f9faff4e89844ab9bce015a7fa3082878b3"
       end
 
       # The hooks and guards the binaries exec. Not signed and not notarised --
       # there is no Mach-O in it. See SUPPORT_ASSET in bin/.devbin/cmd/macos.
       resource "support" do
         url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-        sha256 "f5db2ff05a73c25fa550c1e9be196880389f51e3bc3405b87bfe6c4e2fb1c7c1"
+        sha256 "2ca6bb1c3507eb59c50c8b7d117f80b31f4548392870cec9641f9b5307e231d3"
       end
     end
   end
@@ -78,10 +77,29 @@ class Intent < Formula
     bin.install_symlink libexec/"bin/intentd"
   end
 
-  # NO `service do` BLOCK YET, and its absence is deliberate. intentd currently
-  # reports "not yet implemented": there is no start verb and no log path, so any
-  # block here would be a guess at an interface that does not exist. It arrives
-  # with the daemon lifecycle.
+  # THE SERVICE BLOCK, ADDED 2026-09-05 (dc) BECAUSE ITS OWN STATED PRECONDITION
+  # WAS MET. This comment read: no start verb and no log path, so any block here
+  # would be a guess at an interface that does not exist. Both halves are now
+  # false and were driven on the delivered pair rather than inferred --
+  # `intent daemon start|stop|status|run` all answer, start is idempotent and
+  # reports its pid, and the log path exists and is being written.
+  #
+  # IT RUNS `intentd` DIRECTLY RATHER THAN `intent daemon run`, on the daemon's
+  # own words: main.rs says serving is what this binary does with NO arguments,
+  # and that `intent daemon run` EXECS this binary. Going through the CLI would
+  # add a process for launchd to supervise in front of the one that matters, and
+  # supervise the wrong one if the exec ever became a spawn.
+  #
+  # THE LOG PATHS ARE BREW'S, NOT THE DAEMON'S, AND THAT IS NOT A DUPLICATE.
+  # intentd writes its own structured log under the user's state dir; these two
+  # capture stdout and stderr, where main.rs puts the warnings a supervised
+  # process would otherwise drop on the floor. Two files, two subjects.
+  service do
+    run [opt_bin/"intentd"]
+    keep_alive true
+    log_path var/"log/intentd.log"
+    error_log_path var/"log/intentd.log"
+  end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/intent --version")
