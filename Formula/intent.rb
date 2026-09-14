@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.0.1".freeze
+  RELEASE_VERSION = "3.0.3".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -11,11 +11,11 @@ class Intent < Formula
   # from the /v<version>/ path, and `brew audit --strict` refuses the
   # redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "f1e6f38e24825acc48184ad19691526b5b53198df5e5ece702dec828cd83f3c1"
+  sha256 "442ed1df9adce4ed3dee38c89f00cafc234899246203b22d9fbe09d378920b35"
   license "MIT"
 
   # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
-  # TRUE BY CONSTRUCTION through the two dependency lines below, which is what
+  # TRUE BY CONSTRUCTION through the dependency lines below, which is what
   # a platform limit in a formula is for. Both binaries are Developer ID signed
   # and notarised; nothing is stapled, because a bare Mach-O has nowhere to hold
   # a ticket and Gatekeeper checks online. (No comment line here may open with
@@ -26,14 +26,14 @@ class Intent < Formula
 
   resource "intentd" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-    sha256 "ab125a565c3c94197b849654cf885f9faff4e89844ab9bce015a7fa3082878b3"
+    sha256 "57feb71b5820cc165b480ce8d9f683de7892107e8197ba68d85a0b558e2494cb"
   end
 
   # The hooks and guards the binaries exec. Not signed and not notarised --
   # there is no Mach-O in it. See SUPPORT_ASSET in bin/.devbin/cmd/macos.
   resource "support" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-    sha256 "2ca6bb1c3507eb59c50c8b7d117f80b31f4548392870cec9641f9b5307e231d3"
+    sha256 "b6821e7e91ae3ff4a1c80447318d6a337a6550461cbfa85ebe4802f4608c2310"
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
@@ -45,11 +45,11 @@ class Intent < Formula
   # the binary unable to find the hooks it execs, and both whiteboard guards and
   # every session hook stop working with nothing reporting a failure.
   #
-  # That rules IN two layouts and Homebrew rules one of them OUT. Installing to
+  # That rules IN the layouts that keep the tree in the keg, and Homebrew rules one of them OUT. Installing to
   # `prefix/lib/templates` resolves correctly, but `lib` is a LINKED directory:
   # brew symlinks keg `lib` subdirectories into the shared prefix, so this would
   # publish a directory called `templates` into `#{HOMEBREW_PREFIX}/lib`
-  # alongside 858 other formulae's entries. `templates` is about as generic as a
+  # alongside every other formula's entries. `templates` is about as generic as a
   # name gets, and the collision would surface as a `brew link` failure in
   # somebody else's install. `libexec` is not linked, so the tree stays private
   # to this keg.
@@ -85,6 +85,25 @@ class Intent < Formula
     bin.install_symlink libexec/"bin/intentd"
   end
 
+  # A CAVEAT, NOT A post_install, AND THE CHOICE WAS DRIVEN (dc, 2026-09-11).
+  # The pre-commit gate a project installs finds this keg through ~/.local/share/intent/home,
+  # and only `intent bootstrap` writes that file, so a fresh install refuses
+  # every commit until it runs. A post_install cannot run it for the user:
+  # Homebrew gives post_install a throwaway HOME inside its sandbox and denies
+  # writes outside the keg, measured with a probe formula (Dir.home was a
+  # sandbox temp directory; a write to the real home failed with EPERM). The
+  # caveat is conditional because bootstrap REPOINTS an existing pointer, and a
+  # machine already set up -- a source checkout, say -- should not be moved.
+  def caveats
+    <<~EOS
+      Intent's pre-commit gate finds this install through ~/.local/share/intent/home, which
+      only `intent bootstrap` writes. If that file does not exist yet, run:
+        intent bootstrap
+      Until it exists, every commit in a project with the gate installed is
+      refused.
+    EOS
+  end
+
   # THE SERVICE BLOCK, ADDED 2026-09-05 (dc) BECAUSE ITS OWN STATED PRECONDITION
   # WAS MET. This comment read: no start verb and no log path, so any block here
   # would be a guess at an interface that does not exist. Both halves are now
@@ -99,9 +118,10 @@ class Intent < Formula
   # supervise the wrong one if the exec ever became a spawn.
   #
   # THE LOG PATHS ARE BREW'S, NOT THE DAEMON'S, AND THAT IS NOT A DUPLICATE.
-  # intentd writes its own structured log under the user's state dir; these two
-  # capture stdout and stderr, where main.rs puts the warnings a supervised
-  # process would otherwise drop on the floor. Two files, two subjects.
+  # intentd writes its own structured log under the user's state dir; these
+  # capture stdout and stderr, both into one brew log, where main.rs puts the
+  # warnings a supervised process would otherwise drop on the floor. The brew log
+  # and the daemon's log are different files with different subjects.
   service do
     run [opt_bin/"intentd"]
     keep_alive true
