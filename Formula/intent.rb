@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.1.0".freeze
+  RELEASE_VERSION = "3.2.0".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -11,7 +11,7 @@ class Intent < Formula
   # from the /v<version>/ path, and `brew audit --strict` refuses the
   # redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "035b466b8363613a78851335a38add051715dfbc4d76f5e9785bac7befe55270"
+  sha256 "31f023df96c12a03e61f1308b979f172c32704ec2c695b61127a24bdb3566162"
   license "MIT"
 
   # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
@@ -26,14 +26,15 @@ class Intent < Formula
 
   resource "intentd" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-    sha256 "995dcc004a34a839e40b4e023114509c67ed6eae946287c2d4de865e2f8c9b60"
+    sha256 "3f58b402e7cd9ef8bdbe180ee85021b4e901e9ddf71bcb7ecda8f15c28c94cf2"
   end
 
-  # The hooks and guards the binaries exec. Not signed and not notarised --
-  # there is no Mach-O in it. See SUPPORT_ASSET in bin/.devbin/cmd/macos.
+  # The support tree the binaries read and exec: templates, hooks, guards, the
+  # rule library, skills and subagents. Not signed and not notarised -- there is
+  # no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/macos.
   resource "support" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-    sha256 "3fe7de546de6a22c9665f8ce1cc85906e4bca8a63c0ad33a076693dcaff2df9c"
+    sha256 "6b5423f2805ddf5a01d2a73fccbc4f27ae228c19fe1af514ef638798904eee22"
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
