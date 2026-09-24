@@ -32,7 +32,7 @@ The release also carries `Intent.app.zip`, the Intent menubar app. **The formula
 
 ### intentd is optional
 
-**The CLI does not require the daemon.** Every `intent` command does its work in-process unless you pass `--daemon`. To run `intentd`, use `intent daemon start` (and `status`, `stop`, `restart`), or let launchd keep it running:
+**The CLI does not require the daemon.** Every `intent` command does its work in-process unless you pass `--daemon`, with two exceptions: `intent graphql` is answered only by a running `intentd`, and `intent browse` opens a page that a running `intentd` serves. To run `intentd`, use `intent daemon start` (and `status`, `stop`, `restart`), or let launchd keep it running:
 
 ```sh
 brew services start intent
