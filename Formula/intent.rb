@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.2.0".freeze
+  RELEASE_VERSION = "3.2.1".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -11,7 +11,7 @@ class Intent < Formula
   # from the /v<version>/ path, and `brew audit --strict` refuses the
   # redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "31f023df96c12a03e61f1308b979f172c32704ec2c695b61127a24bdb3566162"
+  sha256 "b6494a937b8a5171fca457927c9b8df774ddf7d50e7c7669e5e5cc44083a03c1"
   license "MIT"
 
   # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
@@ -26,7 +26,7 @@ class Intent < Formula
 
   resource "intentd" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-    sha256 "3f58b402e7cd9ef8bdbe180ee85021b4e901e9ddf71bcb7ecda8f15c28c94cf2"
+    sha256 "901cf514cb080d7a68c803ccb5ba033107aafc1145861f7b100d51c19aec9d9c"
   end
 
   # The support tree the binaries read and exec: templates, hooks, guards, the
@@ -34,7 +34,7 @@ class Intent < Formula
   # no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/macos.
   resource "support" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-    sha256 "6b5423f2805ddf5a01d2a73fccbc4f27ae228c19fe1af514ef638798904eee22"
+    sha256 "6859c12ed9eb713067c1a3e765b290850337eddf87a8d4730c36cb4f71680b05"
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
@@ -95,13 +95,32 @@ class Intent < Formula
   # sandbox temp directory; a write to the real home failed with EPERM). The
   # caveat is conditional because bootstrap REPOINTS an existing pointer, and a
   # machine already set up -- a source checkout, say -- should not be moved.
+  #
+  # THE UPGRADE CASE (issue 0527, 2026-09-23). Intent 3.2.0 and earlier recorded
+  # the versioned keg, Cellar/intent/<version>/libexec, and `brew upgrade`
+  # deletes that keg, so the pointer names nothing and every gated commit is
+  # refused. From 3.2.1, bootstrap records opt/intent/libexec, which follows
+  # every upgrade. No 3.2.1 code runs before the old pointer breaks, so this
+  # caveat is the one lever that reaches such a machine at its upgrade. It stays
+  # conditional: a pointer naming anything else is left as it is.
+  #
+  # **WHETHER THE KEG IS STILL ON DISK DOES NOT DECIDE IT** (issue 0540). This
+  # said to run bootstrap only once the keg the pointer named was gone, and a
+  # keg brew has not cleaned up yet still resolves, so that machine read the
+  # advice as not its own and broke at the next `brew cleanup`. A pointer
+  # naming any keg under Cellar/intent/ is re-recorded, and `intent bootstrap
+  # --check` (issue 0533) is how a reader sees which case they are in.
   def caveats
     <<~EOS
       Intent's pre-commit gate finds this install through ~/.local/share/intent/home, which
-      only `intent bootstrap` writes. If that file does not exist yet, run:
+      only `intent bootstrap` writes, and `intent bootstrap --check` says where it points.
+      Run
         intent bootstrap
-      Until it exists, every commit in a project with the gate installed is
-      refused.
+      if that file does not exist yet, or if it names an Intent under Cellar/intent/, whether
+      or not that version is still installed: Intent 3.2.0 and earlier recorded the versioned
+      keg, which `brew upgrade` removes, and from then on every commit in a project with the
+      gate installed is refused. Later versions record a path that survives upgrades, and a
+      file naming anything else, such as a source checkout, needs nothing.
     EOS
   end
 
