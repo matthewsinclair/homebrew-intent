@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.2.2".freeze
+  RELEASE_VERSION = "3.2.3".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -11,7 +11,7 @@ class Intent < Formula
   # from the /v<version>/ path, and `brew audit --strict` refuses the
   # redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "1a80bb21bd6b241bdb66c8f0753cf62fe828b06def8e7fa06f65d3c0665d4682"
+  sha256 "789f581b0c890bbee0c33a7f30573da5195ff9e9f4396359ff301aa4c00820af"
   license "MIT"
 
   # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
@@ -26,7 +26,7 @@ class Intent < Formula
 
   resource "intentd" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-    sha256 "847853b1eab193e500ff9dbb6aa7cbf03648412fb04f3d0742ed8ed4501fe063"
+    sha256 "51df3358d4a7618764138028f134e637d707aa3d8370a83308b04e0175159ef0"
   end
 
   # The support tree the binaries read and exec: templates, hooks, guards, the
@@ -34,7 +34,7 @@ class Intent < Formula
   # no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/macos.
   resource "support" do
     url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-    sha256 "ce6b7bd0a1a34efeb11f0f5d289d05feb2abedaa4bd4468768f83438cb5153ee"
+    sha256 "4042055ec151c5668a19439746e01c21e6e36bccf9caa19c48cc59c2c131deca"
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
