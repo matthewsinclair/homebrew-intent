@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.2.3".freeze
+  RELEASE_VERSION = "3.2.4".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -7,34 +7,50 @@ class Intent < Formula
   # was nested there, and `brew tap` validates a tap's formulae under EVERY
   # simulated OS and arch: on Linux and on Intel the nested form has no url, so
   # the tap refused with "formula requires at least a URL" and "invalid syntax
-  # in tap", for everyone. There is no `version` line because brew reads it
-  # from the /v<version>/ path, and `brew audit --strict` refuses the
-  # redundant one.
+  # in tap", for everyone.
+  # It is macOS arm64's, and on Linux the package for the machine's
+  # architecture overrides it inside `on_linux`, below.
+  # There is no `version` line because brew reads it from the /v<version>/ path,
+  # and `brew audit --strict` refuses the redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "789f581b0c890bbee0c33a7f30573da5195ff9e9f4396359ff301aa4c00820af"
+  sha256 "d01d40223a3af7979c7568a5058fc780dfb99f628d80173216d1c62e469b4448"
   license "MIT"
 
-  # macOS arm64 only, by ruling (hv, 2026-08-15) rather than by omission, and
-  # TRUE BY CONSTRUCTION through the dependency lines below, which is what
-  # a platform limit in a formula is for. Both binaries are Developer ID signed
-  # and notarised; nothing is stapled, because a bare Mach-O has nowhere to hold
-  # a ticket and Gatekeeper checks online. (No comment line here may open with
-  # the dependency keyword: `brew audit` reads that as a commented-out
-  # dependency and refuses it.)
-  depends_on arch: :arm64
-  depends_on :macos
+  # On macOS it is arm64 only, by ruling (hv, 2026-08-15) rather than by
+  # omission, and TRUE BY CONSTRUCTION through the dependency line inside
+  # `on_macos`, which is what a platform limit in a formula is for. Both macOS
+  # binaries are Developer ID signed and notarised; nothing is stapled, because a
+  # bare Mach-O has nowhere to hold a ticket and Gatekeeper checks online. On
+  # Linux (hv, 2026-10-14) the package for the machine's architecture carries
+  # both binaries, built static against musl, and the support tree. (No comment
+  # line here may open with the dependency keyword: `brew audit` reads that as a
+  # commented-out dependency and refuses it.)
+  on_macos do
+    depends_on arch: :arm64
 
-  resource "intentd" do
-    url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-    sha256 "51df3358d4a7618764138028f134e637d707aa3d8370a83308b04e0175159ef0"
+    resource "intentd" do
+      url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
+      sha256 "7072cefe0e7f7ca9231679fa8a833a827570fb438df5586903093790c46746ee"
+    end
+
+    # The support tree the binaries read and exec: templates, hooks, guards, the
+    # rule library, skills and subagents. Not signed and not notarised -- there
+    # is no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/shared/support.lib.
+    resource "support" do
+      url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
+      sha256 "ac0d128ad030d72cda3abe5ed8ab0d27cfde3de9f7cf14cb0d600ae4c80311e7"
+    end
   end
 
-  # The support tree the binaries read and exec: templates, hooks, guards, the
-  # rule library, skills and subagents. Not signed and not notarised -- there is
-  # no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/macos.
-  resource "support" do
-    url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-    sha256 "4042055ec151c5668a19439746e01c21e6e36bccf9caa19c48cc59c2c131deca"
+  on_linux do
+    on_intel do
+      url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-x86_64-unknown-linux-musl.tar.gz"
+      sha256 "1feeed1a17024f21b280dff2c4d90f89d32576b301ebe460de169c8456ff0441"
+    end
+    on_arm do
+      url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-unknown-linux-musl.tar.gz"
+      sha256 "a761690aaabade3fb0958cf95fc042e10d50af4a4c563e2dc7883b332c92275e"
+    end
   end
 
   # EVERYTHING LANDS IN libexec AND bin GETS SYMLINKS, which is not the obvious
@@ -55,14 +71,21 @@ class Intent < Formula
   # somebody else's install. `libexec` is not linked, so the tree stays private
   # to this keg.
   def install
-    (libexec/"bin").install Dir["intent-*"].first => "intent"
-    resource("intentd").stage do
-      (libexec/"bin").install Dir["intentd-*"].first => "intentd"
-    end
-    # The archive is rooted at the install root, so this stays correct when the
-    # shipped set grows -- it installs whatever the tarball carries rather than
-    # naming `templates` and having to change when something joins it.
-    resource("support").stage do
+    if OS.mac?
+      (libexec/"bin").install Dir["intent-*"].first => "intent"
+      resource("intentd").stage do
+        (libexec/"bin").install Dir["intentd-*"].first => "intentd"
+      end
+      # The archive is rooted at the install root, so this stays correct when the
+      # shipped set grows -- it installs whatever the tarball carries rather than
+      # naming `templates` and having to change when something joins it.
+      resource("support").stage do
+        libexec.install Dir["*"]
+      end
+    else
+      # The Linux package is the install root already, under the one top-level
+      # directory brew strips when it unpacks: bin/intent and bin/intentd, and
+      # the support tree beside them (bin/int linux package).
       libexec.install Dir["*"]
     end
 
@@ -72,7 +95,7 @@ class Intent < Formula
     # mode rather than setting one. So 644 goes in, 644 comes out, `brew
     # install` prints its beer emoji, and every `intent` call returns
     # `permission denied`. Measured on the v3.0.0 tap, 2026-08-26, on the first
-    # real install from the network.
+    # real install from the network. Harmless on Linux, where tar keeps the mode.
     #
     # A CACHE-PRESEEDED INSTALL CANNOT CATCH THIS, which is why it survived
     # every proof taken before that one: a preseed fills the cache from LOCAL
@@ -141,7 +164,9 @@ class Intent < Formula
   # intentd writes its own structured log under the user's state dir; these
   # capture stdout and stderr, both into one brew log, where main.rs puts the
   # warnings a supervised process would otherwise drop on the floor. The brew log
-  # and the daemon's log are different files with different subjects.
+  # and the daemon's log are different files with different subjects. On Linux
+  # `brew services` runs it under systemd's user manager, which no run has
+  # proven yet.
   service do
     run [opt_bin/"intentd"]
     keep_alive true
