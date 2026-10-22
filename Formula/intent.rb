@@ -1,5 +1,5 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.2.4".freeze
+  RELEASE_VERSION = "3.2.5".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -13,7 +13,7 @@ class Intent < Formula
   # There is no `version` line because brew reads it from the /v<version>/ path,
   # and `brew audit --strict` refuses the redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "d01d40223a3af7979c7568a5058fc780dfb99f628d80173216d1c62e469b4448"
+  sha256 "04f0b258d5bac4678381a9fada37800a90f97e601a2a21d816c8b4f03e3aee5e"
   license "MIT"
 
   # On macOS it is arm64 only, by ruling (hv, 2026-08-15) rather than by
@@ -30,7 +30,7 @@ class Intent < Formula
 
     resource "intentd" do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-      sha256 "7072cefe0e7f7ca9231679fa8a833a827570fb438df5586903093790c46746ee"
+      sha256 "2551136b5f7b7e5d80f456f3529699c12eb41cb6f533d75a07d0ffb38db14842"
     end
 
     # The support tree the binaries read and exec: templates, hooks, guards, the
@@ -38,18 +38,18 @@ class Intent < Formula
     # is no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/shared/support.lib.
     resource "support" do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-      sha256 "ac0d128ad030d72cda3abe5ed8ab0d27cfde3de9f7cf14cb0d600ae4c80311e7"
+      sha256 "d0938ba5832f0660fe4ddd9d86ff4cf4a3650a3887eaddab3f8765d26b2f3017"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-x86_64-unknown-linux-musl.tar.gz"
-      sha256 "1feeed1a17024f21b280dff2c4d90f89d32576b301ebe460de169c8456ff0441"
+      sha256 "e42b33c01982be2303d76302482045a9a0fe4aa91f904b28b4ee8a100de687e1"
     end
     on_arm do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-unknown-linux-musl.tar.gz"
-      sha256 "a761690aaabade3fb0958cf95fc042e10d50af4a4c563e2dc7883b332c92275e"
+      sha256 "3ccb521acc9758543f670b97c2897cf9192aea902c7932363811df957ea75568"
     end
   end
 
