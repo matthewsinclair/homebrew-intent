@@ -1,5 +1,6 @@
 class Intent < Formula
-  RELEASE_VERSION = "3.2.6".freeze
+  RELEASE_VERSION = "3.2.7".freeze
+  SOURCE_COMMIT = "56de3a6e421aad4779fca3d498ff7d26e51036a3".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -13,7 +14,7 @@ class Intent < Formula
   # There is no `version` line because brew reads it from the /v<version>/ path,
   # and `brew audit --strict` refuses the redundant one.
   url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-apple-darwin"
-  sha256 "635852e608cd37d7399f54645a9625fac7ad87969285fc99cadba7e8cdf12955"
+  sha256 "d015915589721dad528e6f77116b42c68db59918ee2bc055565e24d9acfd0346"
   license "MIT"
 
   # On macOS it is arm64 only, by ruling (hv, 2026-08-15) rather than by
@@ -30,7 +31,7 @@ class Intent < Formula
 
     resource "intentd" do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intentd-aarch64-apple-darwin"
-      sha256 "742abda43db999137eead31710b846747458bd1c5b7d94cc4588b28d55ae9497"
+      sha256 "42d6c3439db1851717bca29b7fd6e9567a5b223e2452a2359beb4a20f97b89ad"
     end
 
     # The support tree the binaries read and exec: templates, hooks, guards, the
@@ -38,18 +39,18 @@ class Intent < Formula
     # is no Mach-O in it. See SUPPORT_PATHS in bin/.devbin/cmd/shared/support.lib.
     resource "support" do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-support.tar.gz"
-      sha256 "8d74bad5d5e51fca7fa007019fa6568d384a194fd860393fad9a19375efc6289"
+      sha256 "a1d4d88fd2cf80702ee355af180f7f546a83859bbe19f20cfc90f4688fcee0c7"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-x86_64-unknown-linux-musl.tar.gz"
-      sha256 "810ea46e3533f78624f37c7e65a6fc573bd6d70323bf03b4c5f810e136f55d95"
+      sha256 "fee29e4a97d544dce8feba86c1dd494e20f1635e8007667df44675b4d7e0c71e"
     end
     on_arm do
       url "https://github.com/matthewsinclair/intent/releases/download/v#{RELEASE_VERSION}/intent-aarch64-unknown-linux-musl.tar.gz"
-      sha256 "57a3f869076063ddb270e1aa5c44a28a64bbf067886e37f8793298777907000e"
+      sha256 "c3d0405d9e22f44c621f10fbd6228130c26ee0ad95462c354cf337ac94ef7f7d"
     end
   end
 
@@ -107,6 +108,31 @@ class Intent < Formula
 
     bin.install_symlink libexec/"bin/intent"
     bin.install_symlink libexec/"bin/intentd"
+
+    # THE MANIFEST (ST0087 T3), WRITTEN HERE BECAUSE THE KEG HAS NO CHECKOUT.
+    # `intent install --managed-by brew` writes the same file for a tree it
+    # publishes, and it runs only in a dev checkout, so the formula writes it
+    # itself over what it laid out: the header, then one `shasum -a 256 -c` line
+    # per file, every regular file under libexec, sorted bytewise. T3 fixes the
+    # form and not the writer. `managed_by: brew` is what makes `intent doctor`
+    # and `intent use` read this keg as the brew tree and refuse to write into it.
+    # It is the end of `install` and not a post_install, because Homebrew 7's
+    # `brew style` refuses post_install for the declarative post_install_steps,
+    # which have no step that can hash a file. The binaries are prebuilt, signed
+    # and static, so nothing brew does after `install` rewrites them, and doctor
+    # names any listed file that changed or went missing since.
+    manifest = libexec/".intent-install"
+    files = Dir.glob("**/*", File::FNM_DOTMATCH, base: libexec).select do |f|
+      (libexec/f).file? && libexec/f != manifest
+    end
+    lines = [
+      "# tool: intent",
+      "# version: #{RELEASE_VERSION}",
+      "# source_commit: #{SOURCE_COMMIT}",
+      "# managed_by: brew",
+    ]
+    lines += files.sort.map { |f| "#{(libexec/f).sha256}  #{f}" }
+    manifest.write("#{lines.join("\n")}\n")
   end
 
   # A CAVEAT, NOT A post_install, AND THE CHOICE WAS DRIVEN (dc, 2026-09-11).
@@ -144,6 +170,9 @@ class Intent < Formula
       keg, which `brew upgrade` removes, and from then on every commit in a project with the
       gate installed is refused. Later versions record a path that survives upgrades, and a
       file naming anything else, such as a source checkout, needs nothing.
+
+      A maintainer with a dev or opt tree beside this keg chooses which one answers
+      `intent` with `intent use`, and `intent use brew` hands it back to this keg.
     EOS
   end
 
