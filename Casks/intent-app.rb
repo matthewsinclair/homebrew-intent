@@ -2,11 +2,11 @@
 # below and the commit it names: edit the template, not this file, which the
 # next render replaces.
 #   template  packaging/homebrew/intent-app.rb
-#   tag       v3.5.1
-#   commit    1cc654e5a36ef3cbe5d8d5aaa4ffc1dd5d096711
+#   tag       v3.5.2
+#   commit    fabbffd8cb9ee05c0c8343e8a2b7309c372a30cd
 cask "intent-app" do
-  version "3.5.1"
-  sha256 "40048923e05435ab226034078c10e964193d0aa7ce64242645e08c19642ff689"
+  version "3.5.2"
+  sha256 "ad233612fc9bd06525d8cb4157fa9e1088643551e52f6719dd44718b49855704"
 
   url "https://github.com/matthewsinclair/intent/releases/download/v#{version}/Intent.app.zip"
   name "Intent"
