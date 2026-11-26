@@ -2,11 +2,11 @@
 # below and the commit it names: edit the template, not this file, which the
 # next render replaces.
 #   template  packaging/homebrew/intent.rb
-#   tag       v3.5.3
-#   commit    8475de82526a42742342c2c0df670ac468a212da
+#   tag       v3.5.4
+#   commit    0eb2295119a074bdbc15939746986f28ab803a50
 class Intent < Formula
-  RELEASE_VERSION = "3.5.3".freeze
-  SOURCE_COMMIT = "8475de82526a42742342c2c0df670ac468a212da".freeze
+  RELEASE_VERSION = "3.5.4".freeze
+  SOURCE_COMMIT = "0eb2295119a074bdbc15939746986f28ab803a50".freeze
 
   desc "Steel thread process for helping LLMs help you work with your code"
   homepage "https://github.com/matthewsinclair/intent"
@@ -19,8 +19,8 @@ class Intent < Formula
   # architecture overrides it inside `on_linux`, below.
   # There is no `version` line because brew reads it from the /v<version>/ path,
   # and `brew audit --strict` refuses the redundant one.
-  url "https://github.com/matthewsinclair/intent/releases/download/v3.5.3/intent-aarch64-apple-darwin.tar.gz"
-  sha256 "91c970ab00ec725bae4c99ddb3b53b0ab4f26ab883d8739c87e2ee164a251ebb"
+  url "https://github.com/matthewsinclair/intent/releases/download/v3.5.4/intent-aarch64-apple-darwin.tar.gz"
+  sha256 "c5959ecbec784affa7c8bc7de142f31bfb76d95d47c9abbbdb777f017420e448"
   license "MIT"
 
   # On macOS it is arm64 only, by ruling (hv, 2026-08-15) rather than by
@@ -39,12 +39,12 @@ class Intent < Formula
 
   on_linux do
     on_intel do
-      url "https://github.com/matthewsinclair/intent/releases/download/v3.5.3/intent-x86_64-unknown-linux-musl.tar.gz"
-      sha256 "e3aec148b87d43cdf856a954ae84bd5bfab274c550b1ffc818eadebc9b7b714f"
+      url "https://github.com/matthewsinclair/intent/releases/download/v3.5.4/intent-x86_64-unknown-linux-musl.tar.gz"
+      sha256 "c12bc0a8cd55bf424857a1fdba6e024de32f279e0a58288262971dbd5a2a8012"
     end
     on_arm do
-      url "https://github.com/matthewsinclair/intent/releases/download/v3.5.3/intent-aarch64-unknown-linux-musl.tar.gz"
-      sha256 "d6f144b70721f333540d7b983a40a46eb8a52b06b4c2f93dc31c7d9c7dfe20f0"
+      url "https://github.com/matthewsinclair/intent/releases/download/v3.5.4/intent-aarch64-unknown-linux-musl.tar.gz"
+      sha256 "e5a020393d0a3e771c81212e8231bde9ced09070626f7f67d31893e21bb7c790"
     end
   end
 
@@ -89,10 +89,10 @@ class Intent < Formula
       end
       lines = [
         "# tool: intent",
-        "# version: 3.5.3",
-        "# source_commit: 8475de82526a42742342c2c0df670ac468a212da",
+        "# version: 3.5.4",
+        "# source_commit: 0eb2295119a074bdbc15939746986f28ab803a50",
         "# managed_by: brew",
-        "# line: intent 3.5.3 (brew, 8475de82526a)",
+        "# line: intent 3.5.4 (brew, 0eb2295119a0)",
       ]
       lines += files.sort.map do |f|
         sum = (libexec/f).sha256
